@@ -1,0 +1,598 @@
+RipIt version 3.9.0 2009-07-14
+Maintained by Felix Suwald
+Web Site: http://www.suwald.com/ripit/index.html
+
+
+What Is It?
+-----------
+RipIT is used to create MPEG-1 Layer 3 (mp3), Ogg Vorbis (ogg), Flac,
+Faac (m4a), audio lossless (als), Musepack (mpc), Wavpack (wv) and/or
+Wave (wav) audio files from an audio CD. With ffmpeg formats like
+Apple lossless audio (m4a) and other formats can be produced. It is a
+front-end written in perl, for these programs:
+    * "cdparanoia", "dagrab" etc. for ripping the audio CD tracks
+    * "Lame", "OggVorbis" "Flac", "Faac", "mp4als", "Musepack",
+      "Wavpack" and "ffmpeg" for encoding the wav files to "mp3", "ogg",
+      "flac", "m4a" ("aac"), lossless "als", "mpc", "wv" or lossless
+      "m4a" ("alac").
+    * "CDDB_get" or "WebService-MusicBrainz" perl modules for retrieval
+      of CD information.
+
+
+It runs in text mode (no fancy GUI here) and does everything required to
+produce a set of mp3/ogg/flac/m4a/mpc/wv/... files without any
+user-intervention.
+This program does the following with an audio CD:
+    * Get the audio CD album/artist/track information from CDDB
+    * Rip the audio CD (using cdparanoia or other cdrippers)
+    * Encode the files (using lame, oggenc, flac, faac, musepack etc.)
+    * Tag them according to its format
+    * Extracts possible hidden tracks
+    * Optional: creates a playlist (M3U) file
+    * Optional: prepares and sends a CDDB submission
+    * Optional: saves the CDDB file
+    * Optional: creates a toc, cue or inf files to burn a CD in DAO with text
+    * Optional: anaylze the wavs for gaps and splits them into chunks
+    * Optional: merges wavs for gapless encoding
+    * Optional: creates a md5sum for each type of sound files
+    * Optional: normalizes the wavs before encoding.
+    * Optional: adds a coverart and album gain to the tags (provided a
+                picture and if the format supports picture tags).
+    * Optional: detection of Various Artists style and tagging according
+                the level of detection.
+Different encoding formats or the same format at different qualities can
+be used at the same time and encoded into different directories.
+
+
+Installation
+------------
+To install RipIT correctly (with man-page, config file and the ability
+to call the script by typing ripit only), the single line (as root)
+
+make install
+
+will perform the installation. Additionally a rpm-package is available,
+and a deb-package should also be ready.
+
+
+But the following software must be installed to use RipIT:
+
+* Perl:
+  perl v5 - will most probably already be installed
+
+* A ripper to extract the wavs from the CD:
+  cdda2wav - will most probably already be installed, or
+  cdparanoia - will most probably already be installed, or
+  dagrab v0.3.5 - http://web.tiscalinet.it/marcellou/dagrab.html or
+  tosha or cdd
+
+* An encoder to create compressed sound files out of the wavs:
+  lame - http://lame.sourceforge.net/ to create mp3
+  oggenc - http://vorbis.com to create ogg
+  flac - http://flac.sourceforge.net/index.html
+  faac - http://www.audiocoding.com to create m4a (aac)
+  mp4als - http://packman.links2linux.org/package/mp4als/105353
+  musepack - http://www.musepack.net to create mpc (mpp)
+  wavpack - http://www.wavpack.com/
+  ffmpeg - http://ffmpeg.org/
+
+
+* CD-Data-Bank software to retrieve CD information:
+  CDDB_get perl module v2.27 or later - http://armin.emx.at/cddb/
+  To install:
+    -) login as root and connect to the internet, then type
+    -) perl -MCPAN -e 'install CDDB_get'
+  or the perl modules WebService::MusicBrainz to access the
+  Musicbrainz.org database for high quality entries. One needs the
+  discid calculation command from
+   -) http://musicbrainz.org/doc/libdiscid
+  to be installed. Additionally the perl module MusicBrainz::DiscID
+  is recommended and will become mandatory in future.
+
+
+Calling RipIT
+-------------
+Depending on the installation, type ripit or ./ripit.pl in the directory
+where ripit.pl resides.
+
+
+Configuring RipIT
+-----------------
+A config file is located in $HOME/.ripit or /etc/ripit. It can be edited
+using options --savenew or --save, or preferably with an editor instead
+of passing all parameters on the command-line.
+
+Of course, being a perl programer, one can easily configure  anything in
+the program. Please inform the maintainer if some improvements have been
+made! My e-mail address is given at the bottom of this file.
+
+
+Setting the Templates
+---------------------
+The dirtemplate and tracktemplate contain the format of the directory
+and filename for the output directory and tracks.
+These variables are later evaluated by RipIT, so one can put any legal
+characters in here (even / for multi-level directories) and any of the
+following variables:
+  $album     - CD album name
+  $artist    - CD artist name
+  $genre     - CDDB genre or the genre passed from command line
+  $iletter   - initial letter of artist name
+  $quality   - encoder options (not the arguments of option --quality)
+  $suffix    - the suffix of the encoded file, i.e. mp3, ogg, flac or aac
+  $tracknum  - number of the current track
+  $trackname - name of the current track
+  $trackno   - total number of tracks of current disc
+  $year      - CDDB year or the year passed from command line.
+
+The '" and "' are mandatory and must surround the template.
+
+Example tracktemplate:
+--tracktemplate='"$tracknum - $trackname"'
+would produce: 07 The Game, the default setting.
+
+Example dirtemplate:
+--dirtemplate='"/$iletter/$artist $genre/$year - $album"'
+would produce a "3-level" directorytree:
+.../S/Swandive Trip-Hop/1997 - Intuition/
+The default is: '"$artist - $album"'
+
+The dirtemplate-option is now an array and may be stated more than once
+in the same order as the encoders passed to option --coder, i. e. for
+each encoder one can give one dirtemplate. If less dirtemplates than
+encoders are stated, the last dirtemplate will be used for subsequent
+encoders and the wav-directory.
+
+
+Using RipIt
+-----------
+Insert an audio CD and type "ripit" or "./ripit.pl" as mentioned above.
+The program will then merrily go away and rip/encode the whole audio CD
+unless it encounters a problem.
+
+First the album/artist/track/genre/year/category(CDDB) information is
+retrieved from a CDDB via the internet. If not connected to the internet
+or no CDDB entry is found, one will be prompted to choose either if the
+tracks shall be ripped with default names or manually entered names,
+except if the option --nointeraction was passed. Note that in case the
+box is offline, the respond of the CDDB_get perl-module may take some
+time, be patient.
+With the option --archive, RipIT also checks for local CDDB entries on
+the machine in the $HOME/.cddb directory.
+Then one will be asked to make a CDDB submission or correct an existing
+data-set. In the second case, one can confirm the CDDB settings with
+Enter. Submission to freedb-submit@freedb.org is gruanted, if at least
+one single entry is changed and if sendmail works. In this way it is
+very easy to correct a simple typo somewhere in the DB-entry.
+If one told RipIT not to be connected to the internet (using option
+--nosubmission), the file cddb.toc will be saved in the $HOME-directory,
+and can later be submitted.
+But even with option --nosubmission RipIT will try to do a CDDB lookup,
+and if it finds something, one only has to edit the entry, i. e. this
+option only prevents to send the file directly and overwrite the public
+entry! Be aware that the subject of the e-mail must be exactly as
+displayed by RipIT.
+
+The sound files will be put into a directory with the format according
+to the directory template(s), default setting is:
+$outputdir/$artist - $album/ with the track name consisting of the track
+number and songname (or whatever is specified in the track template).
+
+The sound files will automatically be (id3-) tagged. The tagging is
+performed by the encoders, Lame uses both id3v1 & id3v2.
+
+The following options are available:
+
+ripit [--device|d cd-device] [--scsidevice path] [--outputdir|o path]
+      [--dirtemplate '\"\$parameters\"'] [--chars|W [list]]
+      [--tracktemplate '\"\$parameters\"'] [--trackoffset number]
+      [--dpermission number] [--fpermission number]
+      [--overwrite argument] [--resume|R]
+      [--rip] [--ripper|r cdripper] [--ripopt ripper-options]
+      [--nicerip number] [--disable-paranoia|Z] [--wav|w]
+      [--ghost|G] [--extend seconds] [--prepend seconds]
+      [--quitnodb value] [--encode] [--coder|c encoders] [--musenc cmd]
+      [--faacopt options] [--flacopt options] [--oggencopt options]
+      [--lameopt options] [--mp4alsopt options] [--museopt options]
+      [--wavpacopt options] [--ffmpegopt options] [--ffmpegsuffix suffix]
+      [--quality qualities-list] [--bitrate|b rate]
+      [--maxrate|B rate] [--vbrmode|v old or new] [--preset|S mode]
+      [--vatag number] [--vastring string or regular expression]
+      [--comment id3-comment] [--genre|g genre-tag] [--year|y year-tag]
+      [--mp3gain| cmd options] [--vorbgain| cmd options]
+      [--flacgain| cmd options] [--aacgain| cmd options]
+      [--mpcgain| cmd options] [--wvgain| cmd options]
+      [--utftag|U] [--lowercase|l] [--underscore|u] [--uppercasefirst]
+      [--coverart list] [--coverpath path] [--copycover path]
+      [--mp3tags frame-tag=string] [--proxy|P path] [--mb]
+      [--mbname MB-login] [--mbpass MB-password] [--isrc number]
+      [--cddbserver|C server] [--mirror|m mirror] [--protocol|L level]
+      [--transfer|t cddb or http] [--submission|s] [--mail|M address]
+      [--eject|e] [--ejectcmd command] [--ejectopt options for command]
+      [--lcd] [--lcdhost host] [--lcdport port]
+      [--config] [--save] [--savenew]
+      [--sshlist remote hosts] [--local] [--scp] [--threads numbers]
+      [--archive|a] [--playlist|p number] [--infolog path] [--md5sum]
+      [--cdtoc number] [--inf number] [--cdcue number]
+      [--loop number] [--verbose|x number]
+      [--normalize|N] [--normcmd] [--normopt|z options]
+      [--interaction|i] [--nice|n adjustment] [--halt]
+      [--help|h] [--version|V] [--precmd cmd] [--execmd|X cmd]
+      [--book|A number] [--merge list] [--span|I span] [track_selection]
+
+
+[track_selection]	 - Tracks to rip from. If not specified all tracks
+			   will be ripped. One can also specify a single
+			   track by using a single number, or a selection
+			   of tracks using numbers separated by commas or
+			   hyphens, i.e. 2,6,10, or 3,5,7-9 .
+			   Using a number followed by a comma or hyphen
+			   will rip from that track to the end of the CD
+			   i.e. 3,5- rips track 3 and from track 5 to the
+			   last one. Default: not set
+--merge ordered list of comma separated intervals
+			   Place a hyphen or a + between first and last
+			   tracknumber to be merged. Separate several
+			   intervals with a comma. Default: not set
+-I, --span start-endtime - Define an interval to be ripped when using cdda2wav or
+			   cdparanoia. The hyphen is mandatory.
+			   The format of start and end-time is according to cdparanoia
+			   hh:mm:ss.ff in hours/minutes/seconds/frames. Zero fields
+			   need not be specified, the value of seconds may be larger
+			   than 60. When using cdda2wav this option translates the
+			   values to the \-o and \-d options. When using option merge,
+			   endtime is related to the last track in the selection.
+			   Default: not set.
+--outputdir directory	 - Where the sound should go. If not set, $HOME
+			   will be used. Default: not set.
+--dpermission number	 - Define directory permissions, default: 0755.
+--fpermission number	 - Define permissions of sound and log files,
+			   default: not set, i.e. depending on the system
+			   settings, usually 0644.
+--device cddevice	 - Path of audio CD device, default: /dev/cdrom.
+--scsidevice cddevice	 - Devicename for a different device node of cddevice
+			   where non ripping commands shall be executed.
+--ripper ripper		 - CDripper to use, 0 - dagrab, 1 - cdparanoia,
+			   2 - cdda2wav, 3 - tosha, 4 - cdd, default: 1.
+--ripopt options	 - Options for audio CD ripper.
+--disable-paranoia [number]
+			 - When using dagrab, the number of retries will be
+			   set to 3, with cdparanoia this option is equal
+			   to the -Z option. Usefull for faster ripping,
+			   not recommended. This option accepts an argument:
+			   The number can be set to 0 (paranoia on), to 1
+			   (paranoia off) or to 2 to switch paranoia off if
+			   a track fails or gets a timeout. RipIT will retry
+			   that failed track without paranoia or give up.
+			   Ripping will then continue with paranoia on.
+			   Default: 0 - off, i.e. paranoia mode on.
+--ghost			 - Analyze wav and split into possible chunks of
+			   sound or try to trim lead-in/out. This may
+			   overrided option merge. Delete blank tracks if
+			   only silence ("zero bytes") are found.
+			   Default: off.
+--extend seconds	 - Enlarge splitted chunk by number of seconds
+			   if possible, or track may be trimmed if value is
+			   small (e.g. 0.2), use with caution! Default 2.0.
+--prepend seconds	 - Enlarge splitted chunk by number of seconds
+			   if possible, or track may be trimmed if value is
+			   small (e.g. 0.2), use with caution! Default 2.0.
+--coder encoder		 - Encoder to use, 0 - Lame, 1 - Oggenc,
+			   2 - Flac, 3 - Faac, comma separated list!
+			   E.g. --coder 2,0,1 --quality 3,4,5 will set
+			   Flac-quality to 3, Lame-quality to 4 and Oggenc-
+			   quality to 5.
+--lameopt options	 - Pass other options to the encoder, quote them
+			   with double quotes if needed; semicolon seperat-
+			   ed list if same enocder is used more than once.
+			   Default: not set.
+--oggencopt options	 - More user defined options for Oggenc, see above.
+--flacopt options	 - More user defined options for Flac, see above.
+--faacopt options	 - More user defined options for Faac, see above.
+--museopt		 - More user defined options for Faac, see above.
+--mp4alsopt		 - More user defined options for Faac, see above.
+--wavpacopt		 - More user defined options for Faac, see above.
+--ffmpegopt		 - More user defined options for Faac, see above.
+--ffmpegsuffix suffix	 - Suffix of the choosen encoder in ffmpeg, a
+			   comma sparated list; default: not set.
+--quality quality	 - Comma separated list in the same order than the
+			   list of encoders passed!
+			   Quality for oggenc (1-10) highest = 10;
+			   or compression level for Flac (0-8),
+			   lowest compression = 0; or quality for Lame
+			   in vbr mode (0-9), best quality = 0.
+			   The qualitiy can be turned off with the
+			   argument "off" not to interfer with different
+			   specific encoder options. Default: 5,3,5,100,0,5.
+			   No quality for wavpack and ffmpeg, use options
+			   instead.
+--vbrmode mode		 - Variable bitrate, only used with Lame, mode is
+			   new or old, see Lame manpage.  The Lame-option
+			   quality will be changed to -V instead of -q if
+			   vbr-mode is used; default: not set.
+--bitrate rate		 - Encode mp3 at this bitrate for Lame. If option
+			   --vbrmode used, bitrate is equal to the -b
+			   option, so one might want to set it off,
+			   default 128.
+--maxrate rate		 - maxrate (Bitrate) for Lame using --vbrmode is
+			   equal to the -B option for Lame or the -M option
+			   for Oggenc, default: 0.
+--preset mode		 - Use the preset switch when encoding with Lame.
+			   With otpion --vbrmode new --preset fast will be
+			   used. Default: off.
+--chars [list]		 - Exclude characters in filenames and directories
+			   but not in tags. The argument is optional.
+			   Following characters will be erased, if no
+			   argument stated: \:*?$  plus begining and ending
+			   blanks and periods. This is identical to
+			   argument "NTFS". Passing "HFS" as arguement will
+			   result in deleting colons plus begining blanks
+			   and periods. Or use any list of chracters one
+			   wants to purge. Note that on the command line
+			   they probably need to be escaped. Use argument
+			   "off" to switch option off. Default off.
+			   if your configuration supports it.
+--comment comment	 - Specify a comment (mp3, m4a), or a description
+			   tag (ogg, flac). To write the cddbid used for
+			   freedb or the MusicBrainz discid into the
+			   comment, use the word "cddbid" or "discid".
+			   Default: not set.
+--genre genre		 - Specify (and override CDDB) genre, must be a
+			   valid ID3-genre name if using Lame, can (but
+			   shouldn't) be anything if using other encoders.
+			   Default: not set.
+--year year		 - Specify (and override CDDB) year (mp3, m4a) or a
+			   date tag (ogg, flac). Default: not set.
+--coverart number	 - a comma seperated list of numbers (if several
+			   encoders are used) according to option --coder
+			   with values 0 (no) or 1 (yes), default 0.
+--coverpath path	 - Path to the coverart picture to be included in
+			   the metadata of the sound files. The picture
+			   must be present or e.g. acquired using the
+			   --precmd option. Default: not set.
+--mp3tags FRAME=tag	 - Additional frames to be added to the mp3 file
+			   if encoder does not support the frame or if
+			   some unofficial FRAMEs shall be used. More
+			   than one --mp3tags can be used if several
+			   tags shall be added. Default: not set.
+--vatag number		 - Analyze tracknames for "various artists"
+			   style and split the metadata in case one of
+			   the delimeters (colon, hyphen, slash or
+			   parenthesis) are found. Use unpair numbers
+			   for the scheme "artist ? tracktitle" and pair
+			   numbers in the opposite case. Default: not set.
+--vastring string	 - A string (regular expression) that defines
+			   the "various artists" style, default:
+			   \bVA\b|Variou*s|Various\sArtists
+--dirtemplate '"  foo $parameters "'
+			 - Use single and double quotes to pass the
+			   templates! Allowed are following parameters:
+			   $album, $artist, $genre, $iletter, $quality,
+			   $suffix, $trackname, $tracknum $year and
+			   $trackno (total number of tracks), e.g.
+			   '"/$suffix/$iletter/$artist - $year"'
+			   (default dirtemplate: '"$artist - $album"'),
+			   (default tracktemplate: '"$tracknum $trackname"').
+			   More than one --dirtemplate allowed, depending
+			   on the numbers of encoders.
+--tracktemplate '" foo $parameters "'
+--trackoffset number	 - Use an offset to be added to \$tracknum, default 0.
+--sshlist list		 - Comma separated list of remote machines where
+			   RipIT should encode. The output path must be
+			   the same for all machines. Specify the login
+			   (login@machine) only if not the same for the
+			   remote machine. Else just state the machine
+			   names. See EXAMPLES-section of manpage for more
+			   information. Default: not set.
+--scp			 - If fs can not be mounted on (remote) machine(s),
+			   use scp to copy wavs to remote machines.
+			   Not redommended. Default: not set.
+--local			 - Only used with option --sshlist; if all
+			   encodings shall be done on remote machines, use
+			   --nolocal, default: on.
+-C --mb			 - Access MusicBrainz DB via
+			   WebService::MusicBrainz module instead of the
+			   http protocol (see below). One needs the
+			   discid calculation tool to be installed and
+			   in the path. Default: off.
+--mbname login		 - Give MusicBrainz login name to submitt ISRCs
+			   to the database. Saved in plain when using a
+			   config. Default not set.
+--mbpass password	 - Give MusicBrainz password to submitt ISRCs to
+			   the database. Saved in plain when using a
+			   config. Default not set.
+--isrc number	         - Enable ISRC detection and submission to MB;
+			   default: 0.
+--cddb server		 - CDDB server, either freedb.org, freedb2.org or
+			   musicbrainz.org. Default freedb.org. Note, the
+			   full address is mirror.freedb.org, i. e. default
+			   is freedb.freedb.org. Exception: freedb2.org and
+			   musicbrainz.org have no mirrors, their full
+			   addresses are: freedb2.org and
+			   freedb.musicbrainz.org on port 80 (see transfer
+			   mode).
+--mirror mirror	 	 - Choose "freedb" or one of the freedb.org
+			   mirrors, default: freedb. For more information
+			   check the webpage www.freedb.org. There is no
+			   list of mirrors available these days. This
+			   option might be obsolet as freedb uses random
+			   servers, but the default setting is mandatory.
+--transfer mode	 	 - Transfer mode, cddb or http, will set
+			   default port to 8880 or 80 (for http), default:
+			   cddb. Note: use http mode with CDDB servers
+			   freedb2.org or musicbrainz.org.
+--protocol level	 - The CDDB protocol level for CDDB query. Level 6
+			   supports UTF-8 and level 5 not. Default: 6
+--proxy address	 	 - The http proxy to use when accessing the cddb
+			   server. The CDDB protocol must be http! Default:
+			   not set.
+--nice value		 - Set niceness of encoding process, default 0.
+--nicerip value	 	 - Set niceness of ripping process, default 0.
+--archive		 - Read and save CDDB files in the directory
+			   $HOME/.cddb/"category". Default: off.
+--eject			 - Ejects the CD when finished, default off.
+--ejectcmd command	 - The command to use for ejecting CD (see --eject)
+			   Default: eject.
+--ejectopt options	 - Arguments to the ejecting CD command (see
+			   --ejectcmd), default: path of CD device.
+--quitnodb value	 - Give up CD if no CDDB entry found.
+			   Useful if option --loop or --nointeraction are on.
+			   Default behaviour is to let operator enter data or
+			   to use default artist, album and track names.
+			   Possible values: 0 - off, 1 - on, default: off
+--halt			 - Powers off the machine when finished if the
+			   configuration supports it.
+--submission		 - Specify --nosubmission if the machine is offline
+			   and the created file cddb.toc shall be saved
+			   in $HOME instead of being submitted. With option
+			   --archive the data will also be saved in the
+			   $HOME/.cddb directory.
+--mail address	 	 - Users return e-mail address, needed to submit a
+			   CDDB entry. Default: not set.
+--playlist number	 - Create the m3u playlist file, or use --playlist
+			   0. For filenames without paths use --playlist 2.
+			   Default: 1 - on.
+-A, --book number	 - Create an audiobook file, i. e. merge all tracks
+			   into one sinlge file, option --ghost will be
+			   switched off and file suffix will be m4b
+			   instead of m4a. Make sure to use encoder faac,
+			   ripit will no check that. The installed version
+			   must support the \-w option to write tags. A
+			   chapter file will be written for chapter marks.
+			   Default: off
+--interaction		 - Specify --nointeraction if ripit shall take
+			   the first CDDB entry found and rip without any
+			   questioning, default: on.
+--lcd			 - Use lcdproc to display status, default: not set.
+--lcdhost host	 	 - Set host address for lcdproc, default: localhost.
+--lcdport port	 	 - Set port address for lcdproc, default 13666.
+--infolog path/file	 - Log operations (system calls, file/directory
+			   creation) to file, given with full path;
+			   default: not set.
+--lowercase		 - Lowercase filenames, default: off.
+--underscore		 - Use _ instead of spaces in filenames, default:
+			   off.
+--utftag		 - If negated decodes Lame-tags to ISO8859-1.
+			   Default off.
+--rip			 - Prevent ripping (if wavs present) with
+			   --norip. Used for debugging. Default: on.
+--encode		 - Prevent encoding (generate only wavs) with
+			   --noencode. Default: on.
+--wav			 - Keep the wav files, default: off.
+--normalize		 - Normalize the wav files, default: off.
+--normcmd		 - Command to use for normalizing, default:
+			   normalize.
+--normopt options	 - Options passed to normalize, default: -b.
+			   Option v (q) will be set according to verbosity.
+--cdtoc number	 	 - Create a cd.toc for CDRDAO (1 yes, 0 no),
+			   default: 0 - off.
+--inf number	 	 - Create inf files for wodim (1 yes, 0 no),
+			   default: 0 - off.
+--help			 - Print a short manpage, default: not set.
+--version		 - Print version and exit, default: not set.
+--verbose number	 - Verbosity: Run silent (0), with minimal (1),
+			   normal without encoder msgs (2), normal (3),
+			   verbose (4) or extremly verbose (5). Default 3
+--config		 - Read the config file or use --noconfig,
+			   default on.
+--save			 - Add parameters passed on command line to
+			   config file. An existing config file will be
+			   updated and saved in config.old! Default: not set.
+--savenew		 - Save only parameters passed on command line to
+			   a new config file. An existing config file will
+			   be saved in config.old! Default: not set.
+--loop			 - Continue ripping and encoding as soon as a new
+			   CD is inserted. This option implies that the CD
+			   is ejected when done.
+--resume		 - Resume a previously started session. Default:
+			   not set.
+-O, --overwrite argument
+         		 - Overwrite existing rip (y), quit if directory exists (q)
+			   or force ejection of disc if directory exists (e). Default
+			   off (n), do not overwrite existing directories, use a
+			   directory name with a suffix instead.
+--md5sum		 - Create a MD5-sum file for each type of sound
+			   files. Default: not set.
+--threads number	 - Comma separated list of numbers  giving  maximum
+			   of allowed encoders to run at the same time.
+			   First number for the local machine. Default: 1.
+--execmd command	 - State a command to be executed when ripit finshed. Make
+			   sure to escape the command if needed. Default: not set.
+--precmd command	 - State a command to be executed when ripping starts. Make
+			   sure to escape the command if needed. Default: not set.
+
+
+Program Notes
+-------------
+Most of the output to the screen is produced by the cdripper program.
+The encoder output goes to a log-file, since it's important not to
+clutter the cdripper output. After each track ripped, the encoder
+messages will be displayed, depending on verbosity.
+
+The output can be switched off with option --verbose 0.
+
+For questions about the LCDproc feature, please contact max.kaesbauer
+[at] gmail [dot] com.
+
+The encoding is started as a separate thread from the rest of the
+program so that the encoder works in the background as the cdripper is
+working. This is not the case if normalize is used.
+
+
+Historical Original Author's Comment
+------------------------------------
+This is my first bit of perl code and I've only spent a few days writing
+it so I hope you won't be too critical. I wish I had got around to
+learning perl much earlier as it is a very powerful but easy to use
+language.
+
+I would be grateful for any suggestions on how to improve the code or
+write better perl.
+
+Why did I write this when there are so many other CD ripper front ends?
+There are some very good Linux programs out there that all do similar
+things but none of them did exactly what I wanted, which spurred me into
+writing this and at the same time learn perl.
+
+
+Cheers
+Simon Quinn, Lancashire, UK
+
+
+Other maintainers
+-----------------
+
+Mads Martin Jørgensen, Odense, Denmark
+
+
+Historical Felix Suwald's Comment
+---------------------------------
+The main changes when I started with the 300 line code were:
+1) one can use hyphens (-) in track selection. I missed it, because I
+   often have audio CDs with a data (video) track in the end, so I
+   wanted to avoid failure at ripping that last one!
+   Now, one can enter 1-10 instead of 1,2,3,4,5,6,7,8,9,10. You even may
+   mix commas and hyphens: 1,3-5,9- .
+2) As mentioned in "Using RipIt", I excpected ripit to do the job if the
+   box is off-line, but it did not work with me... now it should work!
+3) As mentioned in "Using RipIt", I also excpected ripit to do the job
+   if no parameters are given. This did not work, but should work now!
+4) I wanted to submit new CDDB entries to freedb.org. After using RipIT
+   I did not want to re-enter the data in grip, kscd or whatever.
+   Now it should work with RipIT.
+   If your submission is not OK, it will be returned to the e-mail
+   address one entered. Edit it and resubmit it.
+5) I never could remember the genre numbers for id3v2 tags. Now you
+   can enter (a part of) the genre name, and if there are several
+   possibilities, then you will be prompted to choose the one you want.
+
+See HISTORY-file for a more detailed change-log. Thanks to all testers
+and those who send me feedback or feature requests. Please specify a
+subject more concise than "RipIT" when sending a mail and state the
+version you use, thanks!
+
+Cheers
+Felix Suwald, Zürich, Switzerland
+
+Please send bugs/comments/wishes to: ripit[_æt_]suwald[_ðöt_]com with a
+explanatory subject with the version you use (not only "RipIT").

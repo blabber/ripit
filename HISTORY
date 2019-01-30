@@ -1,0 +1,413 @@
+Ver.	Release Date	Description
+----	------------	-----------
+1.0	16/02/99	Initial Release
+1.1	24/02/99	Added device selection parameter to command line
+			Better track selection, NOTE: entering a single
+			number will now only rip one track.
+			Added track template, allows you to enter the
+			desired format for the MP3 file
+			Fixed problem when artist & album were the same
+1.2	01/03/99	Fixed file ordering in the M3U file
+			You can specify file names to use _ instead of
+			spaces-
+1.3	03/05/99	Fixed problems with invalid entries on CDDB
+			using / in artist or album names
+			Fixed problem with CDA which occassionally puts
+			a > in the track listing causing ripit to croak
+1.4	13/06/99	Multiple instances of ripit now supported using
+			separate devices
+			chars Truncated Album, Artist & Track titles to
+			64 to avoid file name problems
+			Fixed problem with strange chars in CDDB
+1.5	01/08/99	Added support for LAME encoder
+			Fixed logging problems with multiple instances
+1.6	20/11/99	Added support for CDDA2WAV
+			Added configure options for mp3 encoders and
+			audio rippers
+			Fixed a number of CDDB related problems
+1.7	14/05/00	Added support for GOGO encoder
+			Added support for TOSHA and CDDA rippers
+			Fixed a minor CDDB problem
+1.8	22/05/00	GOGO support was broken
+			Testing options had been left in the encoder
+			and ripper option variables
+2.0	20/08/01	No longer uses XMCD
+			Now uses perl CDDB_get for CDDB lookup
+			Added support for DAGRAB
+			Removed support for BLADEENC and GOGO
+			Added support for OGGVORBIS
+			Added support for ID3V2 tags
+			Added genre override option
+			Added more command line options
+2.2	18/10/03	New maintainer (Mads Martin Joergensen
+			<mmj@mmj.dk>)
+			Trailing slash is no longer needed in the
+			outputdir
+			Use mkdir -p to create the output dir
+			Use perl commands everywhere possible instead
+			of the more expensive 'system()' call
+			Create the m3u file in the output directory
+			Other small fixes
+2.4	06/01/04	Remove all usage of logfiles, people can
+			redirect stdout and stderr. This removes
+			insecure tmp file handling.
+			Fix typo and adjust copyright info.
+2.5	13/11/04	Changes by Felix Suwald:
+			Fixed bug on eject command, fixed perl-typo on
+			checking if genre is valid, was correct in older
+			versions (NO linebreak in system-calls)...
+2.6	15/11/04	New maintainer (Felix Suwald, ripit_at_suwald_com)
+			Added printout of cddbid.
+			Added option not to create the m3u-file.
+			Added option to rip without cddb lookup.
+			Added option to select track-ranges with
+			hyphens, e.g. 1,6-9.
+			Enhanced "no-parameter" ripping, e.g. a humble
+			search for present CD and savings in home-dir.
+2.6.1	18/11/04	Fixed bug on default genre.
+2.6.2	19/11/04	Fixed bug on default trackname and template.
+2.7	27/11/04	Fixed more bugs on default settings.
+			Thanks to patches from Tuukka Pasanen
+			(illuusio@lycos.com):
+			Added option to lower case all names.
+			Added template for oputputdir to make it
+			themable like trackname.
+			Added option to remove weird characters and use
+			unicode for oggvorbis.
+			Added better m3u handling.
+2.8	03/12/04	Fixed more bugs on default settings, better
+			search for number of tracks, diskid etc.
+			Added option to submit CDDB entry at freedb.org.
+2.9			Test (alpha) version of 3.0, not released.
+3.0	18/12/04	Fixed "^M" (Control+M) Bug on CDDB retrieval.
+			Added option to choose mirror host @ freedb.org.
+			Added option to enter id3 genre name instead of
+			genre number (e.g. enter "tri" for "Trip Hop").
+			Added retrieval of disk category, genre and year
+			using CDDB_get.pm version >= 2.22
+			Added option to submit corrected CDDB entries,
+			Revision-Number will be encreased by one!
+			Fixed bug on output directory creation: will not
+			be over written anymore.
+			Added support for UTF-8 encoding using
+			PROTOCOL-LEVEL 6 for CDDB retrieval.
+3.0.1	18/12/04	Added support for genre in ogg vorbis files
+			Fixed bug on non ID3v2 compliant genres when
+			using oggenc, you now can submit them to the
+			CDDB, even if you shouldn't, IMHO.
+3.1	24/12/04	Added support for encoder Flac.
+			Added option to save the CDDB file to the
+			default ~/.cddb directory.
+			Added option to edit CDDB disk and track
+			comments; re-submission only if at least one
+			entry is changed.
+			Fixed bug on default output directory being
+			root.
+			Fixed bug on genre checking.
+3.1.1	31/12/04	Fixed bug on genre checking.
+			Fixed bug on CDDB submission of comment lines.
+3.2	18/01/05	Was RipIT broken with Perl 5.8.5? It now works
+			as with Perl 5.8.1.
+			Added License definition: RipIT has GPL.
+			Added option --interaction.
+			Added option to choose $genre and $year in dir
+			and tracktemplate!
+			Added option to use vbr in lame. Type --bitrate
+			new or --bitrate old instead of a number.
+			Added several other options, one should not need
+			to edit the source anymore.
+3.3	16/02/05	Fixed bugs on output messages and questions.
+			Fixed unfriendly options, don't use 0 or 1 for
+			options without argument but with prefix "no".
+			Fixed bug on too long lines for submission.
+			Added option to use several encoders at the
+			same run, e.g. --coder 2,0,1
+			Added option --protocol to choose protocol level of
+			CDDB query.
+			Added option --proxy to use a proxy.
+			Added option --mail for users mailaddress.
+			Added option --nice to use nice for encoders.
+			Added option --save to save a config file.
+			Added option --help to display infos.
+			Added option --dirtemplate, to use with '"..."'.
+			Added option --tracktemplate, same as above.
+			Added option --vbrmode to use lame in vbr mode
+			with possibility to pass the -b and -B options.
+3.3.1	17/02/05	Fixed serious bug: If last Track is a data
+			track, RipIT gives up, but did so if last
+			track is not a data track. Sorry for that.
+3.3.2	19/02/05	Output looks nicer, now.
+			Fixed bug on broken dagrab.
+			Get error log when using cdparanoia and dagrab.
+3.3.3	22/02/05	Fixed bugs on config file usage: Problem were
+			parameters where argument can be zero!
+			Improved handling of qualities.
+3.3.4	23/02/05	Fixed bug on qualities when passed from command
+			line vs. from config file and sorting when no
+			encoder was defined.
+3.3.5	03/03/05	Fixed bug on checking length of CDDB entries.
+			Added option --utftag, use --noutftag if the tags
+			shall be decoded to ISO8859-1.
+3.3.6	18/04/05	Fixed another bug on checking length of CDDB
+			entries. RipIT now distinguishes between tags and
+			file-names to support (some) special characters in
+			tags!
+			Enhanced playlist file.
+			Allow / in directory and track templates.
+			Eject CD right after ripping.
+3.3.7	23/04/05	Fixed bug on length of CD for CDDB submission
+			and enhanced calculation of track lengths and
+			CD-ID retrieval.
+3.4	03/12/05	Added option --preset to enable the preset switch
+			when using Lame.
+			Added option --wav to keep wav files after ripping
+			instead of deleting them.
+			Added option --encode to be used as --noenocode if
+			only wavs shall be done.
+			Added option --sshlist to encode the wavs on
+			different remote machines.
+			Added option --local to prevent encoding of the
+			wavs on the local machine with --nolocal.
+			Added option --scp for secure-copy when using
+			sshlist if fs can not be mounted on remote host(s).
+			Added option --disable-paranoia to switch on the -Z
+			option of cdparanoia when using cdparanoia.
+			Added option --verbose to suppress any output. When
+			errors occur, there still will be some interaction.
+			Added options --lcd to use lcdproc, --lcdhost and
+			--lcdport, all credits to <max.kaesbauer@gmail.com>
+			Added support for faac, free advanced audio codec
+			to create m4a (aac) files.
+			Added options --cdopt and --faacopt, --flacopt,
+			--lameopt, --oggopt.
+			Added option --chars to prevent using special
+			characters in file names with --nochars.
+			Added option --comment to add a id3-comment to the
+			tags.
+			Added option --rip to be usead as --norip if the
+			wavs are present and only encoding shall be done.
+			Added option --infolog to log certain operations to
+			a file; credits to M. Bright.
+			Enhanced option --archive, the file will not only
+			be saved, but one can read from ~/.cddb dir too.
+			Enhanced options bitrate and quality: they can be
+			switched "off" now!
+			Fixed bug on --archive, the CDDB entry will be
+			saved in full length and not partially deleted.
+			Added option --savenew to creat a new config file
+			with parameters passed to command line.
+			Enhanced option --save, a backup config.old will
+			be created and parameters passed on command line
+			will be added to an existing config.file.
+			Added option --config to prevent reading config
+			file with --noconfig.
+			Fixed bug on too long path (song) names (too long
+			for cdparanoia and cdda2wav).
+			Fixed bug on cdda2wav output. Was cdda2wav broken?
+			Now cdda2wav should work again.
+			Fixed bug on directory creation (wrong mkdir
+			option for BSDers).
+			Fixed bug on option --lowercase and --underscore,
+			only the dirtemplate and tracktemplate will be
+			modified, but not the --outputdir path.
+			Fixed bug on --lowercase, it should work with all
+			UTF-8 characters.
+			Config file is now commented, instead of the
+			options --save or --savenew one can edit manually
+			~/ripit/config easily; credits to Cord Walter!
+			RipIT prints a comment, if there might be a hidden
+			track 0.
+			Ripit tries to rip'n'code hidden tracks, if cdpara-
+			noia is installed.
+			Fixed bug on lamequality when several encoders are
+			passed without lamequality.
+			Fixed bug on playlist file, list should be sorted
+			now and named after artist - album.
+			Fixed bug on genre checking. If genre was partly
+			lame compatible, either ripit hang up in an endless
+			loop or lame failed because of wrong genre.
+3.5.0	06/06/06	Thanks to Elimar Riesebieter Ripit got a Makefile,
+			a manpage and is available as debian package.
+			Added option --cdtoc to create a toc file to burn
+			the wavs with cd-text using cdrdao or cdrecord
+			(in dao mode).
+			Added option --loop to ripp and encode several CDs
+			without interruption (credits to S. Warten).
+			Added options --normalize and --normopt to norma-
+			lize the output level (credits to C. Walter).
+			Fixed bug on CD device detection. Why did nobody
+			complain about?
+			Changed option --chars. Exclude special characters
+			and  (ending!) periods in file names and paths, not
+			in tags!
+			Fixed some semi-bugs in comment tags for oggenc and
+			flac.
+			Major code cleaning after S. Warten introduced
+			strict pragma.
+3.5.1	16/06/06	Typo (everywhere oggenc) to satisfy the needs of
+			Debian.
+3.6.0	16/06/07	Fixed bug on special characters for tags during
+			submission of CDDB entries.
+			Fixed unpleasent behaviour if Lame is not
+			installed.
+			Fixed semi-bug on deletion of wavs using remote
+			machines.
+			Added option --merge to merge tracks for gapless
+			encoding.
+			Added option --resume to continue a previously
+			started session.
+			Added option --ghost to split tracks with gaps
+			into chunks of sound (at experimental stage).
+			Added options --prepend and --extend to enlarge
+			chunks of sound when splitted with option --ghost.
+			Added option --ejectcmd to specify command used
+			to control ejection/loading of CD.
+			Added option --ejectopt to specify options and
+			arguments for --ejectcmd.
+			Added optons --dpermission and --fpermission to
+			set directory and file permissions.
+			Added option --md5sum to create MD5-sum files for
+			each type of sound files.
+			Added option --nicerip to set niceness of ripping
+			process.
+			Added option --core to allow several encoding
+			processes on each machine.
+			Enhanced output from encoding process not to
+			interfer with output of ripper.
+			Submission of CDDB entries uses sendmail, not
+			mail or nail.
+			Some fine-tuning on detection of hidden-tracks
+			and ghost-songs.
+			Enhanced detection of perl modules needed,
+			Ripit depends not on CDDB_get 2.22 but 2.25 and
+			newer, please update.
+3.7.0 06/05/09		Option --dirtemplate accepts more variables to
+			automatically generate different
+			output-directories when different encoding
+			formats or the same format at different
+			qualities is used: $suffix and $quality are self-
+			explanatory, and $iletter is the initial-letter
+			of the artist. Furthermore option dirtemplate is
+			now an array, and for each encoder a different
+			dirtemplate may be choosen.
+			And of course, option --coder now accepts the
+			same format more than once. See examples in
+			manpage.
+			Option ghost has been enhanced and will delete
+			blank tracks -- very experimental.
+			Options prepend and append accept values larger than
+			zero at a decimal precision. RipIT will try to trim
+			lead in/out if true silence (zero bytes) is
+			encounterd.
+			Fixed bug on corrupted wav headers when using
+			option ghost. Flac should not fail anymore.
+			Fixed bug on too long file names and paths for
+			rippers, encoder should not wait endlessly.
+			Fixed bug that option md5sum settings were not
+			read in config file.
+			Fixed bug on option loop, the CD tray should not
+			close again when done and endlessly rip the same
+			CD.
+			Fixed bug on editing CDDB data when using option
+			--lowercase. Tracktitles should not be discarded
+			anymore.
+			Fixed bug on directory creation. All newly
+			created directories should get --dpermission.
+			Option chars has slightly different default
+			settings and argument possebilites, but behaves the
+			same.
+			Option --disable-paranoia now accepts numbers:
+			0 is default (with paranoia mode on), 1 is
+			paranoia off and 2 will switch paranoia off if
+			a single track failed and retry the failed track
+			once again without paranoia.
+			Some code cleaning and structuring.
+			Option core renamed to threads.
+			I noticed that the CDDB_get.pm takes some time
+			to abort CDDB retrieval if not connected to the
+			internet; there is nothing I can do about for
+			the moment.
+			It should be possible to access CDDB servers
+			freedb2.org and musicbrainz.org (using transfer
+			mode http).
+			Encoding of some weired DB files with non ascii
+			characters solved. It still might give strange
+			chars on older versions of Perl.
+			Added option --normcmd to allow different calling
+			sequences on other distros (like Debian).
+			Added option --uppercasefirst to change each word
+			of filenames and tags to first character in upper
+			case.
+3.8.0 28/09/09		Added support of mp4als (lossless) and Musepack
+			(coder 4 and 5).
+			Added option --musenc to set the command name of
+			Musepack (e.g. mppenc or mpcenc).
+			Added option --mb to access musicbrainz.org,
+			discid calculation cmd or pm must be installed.
+			Added option --execmd to execute a command when
+			done.
+			Added option --overwrite to force Ripit either
+			to quit or overwrite an existing dierctory.
+			Added option --quitnodb to quit ripping if no
+			CDDB-entry was found.
+			Added option --span to rip only parts of a track
+			or the merged track-interval.
+			Added option --book to rip all tracks into a single
+			file and writing a chapter file when using faac.
+			Added option --inf to create inf files to burn
+			the wavs with CD-text in DAO mode with wodim.
+			Added option --scsidevice if non ripping commands
+			shall be executed on a different device node.
+			Option --dirtemplate and --tracktemplate accept
+			argument $trackno giving number of tracks of CD.
+			Option --resume can be selected in the config.
+			Option --loop has been enhanced, experimental
+			value 2 will restart a new process as soon the
+			previous disc finished with ripping.
+			Fixed bug when listing merged tracks, there were
+			more mergers shown than actually wanted and
+			effectively ripped.
+3.8.1. 28/11/09   	No new options added.
+			Fixed bug in cd.toc file, corrupted oct encoding
+			of some characters could appear.
+			If a track contains a ghost song and two names
+			separated by a shlash, ghost song will get that
+			one without suffix and the track name shorten
+			for the first (part of the) track.
+			Added some timestamps in output.
+			If MB is used, a genre (and year if not present)
+			will be retrieved from freedb.org.
+			If genre is not Lame compliant, genre "Other"
+			will be used for Lame only, other encoders will
+			used the supplied genre.
+3.8.2. 28/12/09   	No new options added.
+			Fixed bug in reading config file, encoding
+			qualities were not read out.
+			Updated Makefile, configfile will be backuped.
+3.8.3. 03/04/10   	No new options added.
+			Fixed bug on long file names in conjunction with
+			normalize.
+			Fixed bug when using relative paths.
+3.9.0. 14/07/10		Added wavpack (coder 6) and ffmpeg (coder 7)
+			support to encode to other (exotic) formats like
+			apple lossless. Usage of ffmpeg might be exprimental.
+			Added options --coverart and --coverpath to select
+			and add coverart to the metadata. Note that
+			coverart (pictures) must be supplied by the user.
+			Added option --copycover to copy a cover from
+			some place to each directory of encoded files.
+			Added option --precmd to execute a command before
+			ripping starts and e.g. ensure presence of coverart.
+			Added option --trackoffset to add a constant
+			value to the tracknumber in the tracktemplate.
+			Added options --vatag and --vastring to detect
+			various artist style and split artist and track
+			title.
+			Added option --mp3tags to add additional frames
+			to mp3 files not supported by the encoder.
+			Added option --cdcue to create cue-files
+			(cue-sheets) to burn the (merged) wav.
+			Added option --isrc to detect ISRCs in audio
+			data using icedax.
+			Added options --mblogin and --mbpass to submit
+			detected ISRCs to MusciBrainz.

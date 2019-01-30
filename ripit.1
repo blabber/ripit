@@ -1,0 +1,841 @@
+.TH RIPIT "1" "July 14th, 2010" "ripit" "RipIT audio converter"
+.SH "NAME:"
+.PP
+ripit \- Perl script to create flac, ogg, mp3, m4a (aac), als (mp4),
+mpc, wv or other files from an audio CD.
+.SH "SYNOPSIS:"
+.PP
+ripit [options]
+.SH "DESCRIPTION:"
+.PP
+This Perl script makes it a lot easier to create compressed sound files
+from an audio CD. RipIT supports Flac, Lame, Oggenc, Faac, mp4als,
+Musepack, Wavpack and ffmpeg. Artist and song titles are retrieved
+either with the CDDB_get.pm from freedb.org or using
+WebService::MusicBrainz.pm from MusicBrainz.org.
+.PP
+It is possible to submit and edit CDDB entries at freedb.org, submission
+of MusicBrainz data need a login.
+Hidden tracks and ghost songs are detected and split into chunks of
+sound, a toc, cue or inf files permit to burn the WAV files with
+text and no gaps in DAO mode. Several encoder formats and qualities can
+be used in the same run (even the same encoder) and encoded into
+different directories. Distributed ripping and launch of more than one
+encoder process in the same time is possible.
+.PP
+Several manipulations on tags are supported, e.g. adding coverart,
+detection of Various Artists style at different levels or
+album gain; external commands can be launched before and after ripping /
+encoding is done with all CDDB information, e.g. to ensure presence of
+coverart, calculation of md5sums and playlistfiles can be done.
+.SH "VERSION:"
+.PP
+RipIT Version 3.9.0
+.SH "OPTIONS:"
+.TP
+[track_selection]
+Tracks to rip from.
+If not specified,  all tracks will be ripped. Specify a single
+track by using a single number, or a selection of tracks using
+numbers separated by commas or hyphens, e. g. 2,6,10, or 3,5,7\-9.
+Using a number followed by a comma or hyphen will rip from
+that track to the end of the CD i. e. 3,5\- rips track 3 and
+from track 5 to the last one. Default: not set.
+.TP
+\fB\-\-merge\fR ordered list of comma separated intervals
+Place a hyphen (\-) or a plus (+) between first and last track number to
+be merged. Omitting the last number will merge all subsequent tracks.
+Separate several intervals with commas. Default: not set.
+.TP
+\fB\-I,\fR \fB\-\-span\fR start\-endtime
+Define an interval to be ripped when using cdda2wav or cdparanoia. The
+hyphen is mandatory.
+The format of start and end-time is according to cdparanoia hh:mm:ss.ff
+in hours/minutes/seconds/frames, but precision is set to seconds, i. e.
+frames will be ignored. Zero fields need not be specified and the
+value of seconds may be larger than 60. When using cdda2wav this option
+translates the values to the \-o and \-d options of cdda2wav. When using
+option merge, endtime is related to the last track in the selection.
+Default: not set.
+.TP
+\fB\-o,\fR \fB\-\-outputdir\fR dir
+Where the sound should go. If not set, $HOME will be used. Default: not
+set.
+.TP
+\fB\-d,\fR \fB\-\-device\fR cddevice
+Path of audio CD device, default: /dev/cdrom.
+.TP
+\fB\-\-scsidevice\fR cddevice
+Device name for special devices if the non ripping commands (except
+eject commands) shall be executed on a different device node. This
+might be useful for some old SCSI devices. If not set the cddevice of
+option \-\-device will be used. Default: not set
+.TP
+\fB\-r,\fR \fB\-\-ripper\fR \fInumber\fP
+CD ripper to use,
+.I 0
+\- dagrab,
+.I 1
+\- cdparanoia,
+.I 2
+\- cdda2wav,
+.I 3
+\- tosha,
+.I 4
+\- cdd. Because cdparanoia and dagrab are the only rippers in this list
+that immediately fail on data tracks, RipIT can create an error.log if
+problems are encountered and continues to rip and encode without endless
+looping! Please use dagrab or cdparanoia, otherwise RipIT might hang
+while waiting for data tracks.
+Default:
+.I 1
+\- cdparanoia.
+.TP
+\fB\-\-ripopt\fR \fIoptions\fP
+User definable
+.I options
+for specific ripper. Quote them if necessary. Default: not set.
+.TP
+\fB\-\-nicerip\fR \fInumber\fP
+Set niceness of ripping process, default: 0.
+.TP
+\fB\-Z,\fR \fB\-\-disable\-paranoia\fR [\fInumber\fP]
+When using dagrab, the number of retries will be set to 3, with
+cdparanoia this option is equal to the \fB\-Z\fR option of cdparanoia.
+The \fInumber\fP can be set to \fI0\fP (paranoia on), to \fI1\fP (paranoia
+off) or to \fI2\fP to switch paranoia off if a track fails or gets a
+timeout. RipIT will retry that failed track without paranoia or give up.
+Ripping will then continue with paranoia on. Default: 0 \(hy off, i. e.
+use paranoia mode.
+.TP
+\fB\-\-ghost\fR
+Analyze each wav for gaps and split it into chunks if gaps are detected
+and/or try to trim lead-in/out. This may override option merge. Delete
+blank tracks if only silence ("zero bytes") are found. Experimental!
+Default: off.
+.TP
+\fB\-\-extend\fR \fIseconds\fP
+When using option \fB\-\-ghost\fR and only if a chunk of sound is
+detected, enlarge chunk by amount of
+.I seconds
+at end if possible, or track may be trimmed if value is small (e.g.
+0.3), use with caution. Default: 2.0.
+.TP
+\fB\-\-prepend\fR \fIseconds\fP
+When using option \fB\-\-ghost\fR and only if a chunk of sound is
+detected, enlarge chunk by amount of
+.I seconds
+at beginning, if possible, or track may be trimmed if value is small
+(e.g. 0.3), use with caution. Default: 2.0.
+.TP
+\fB\-c,\fR \fB\-\-coder\fR \fInumber\fP
+Encoder(s) to use,
+.I 0
+\- Lame (for mp3),
+.I 1
+\- Oggenc,
+.I 2
+\- Flac,
+.I 3
+\- Faac,
+.I 4
+\- mp4als,
+.I 5
+\- Musepack,
+.I 6
+\- Wavpack,
+.I 7
+\- ffmpeg,
+a comma separated list, or as an array. The same encoder may be
+stated more than once, but different output-directories must be
+specified stating the \-\-ditemplate for each encoder or using the
+$quality parameter in option \fB\-\-dirtemplate\fR or
+\fB\-\-tracktemplate\fR. See below. Default:
+.IR 0 .
+.TP
+\fB\-\-faacopt\fR Faac\-options
+Pass other options to the encoder. If the same encoder has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-\-flacopt\fR Flac\-options
+Pass other options to the encoder. If the same encoder has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-\-lameopt\fR Lame\-options
+Pass other options to the encoder. If the same encoder has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-\-museopt\fR Musepack\-options
+Pass other options to the encoder. If the same encoder has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-\-musenc\fR Musepack\-encoder
+Choose Musepack encoder to be used, either mpcenc or mppenc for older
+versions; default: mpcenc.
+.TP
+\fB\-\-mp4opt\fR Mp4als\-options
+Pass other options to the encoder. Option \-MP4 of encoder mp4als is
+mandatory to enable tagging of sound files. Use the appropriate options
+to alter compression level and speed. If the same encoder has been
+stated more than once, use a comma separated list. Quote them with
+double quotes if needed; default: not set.
+.TP
+\fB\-\-oggencopt\fR Oggenc\-options
+Pass other options to the encoder. If the same encoder has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-\-wavpackopt\fR Wavpack\-options
+Pass other options to the encoder. If the same encoder has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-\-ffmpegopt\fR ffmpeg\-options
+Pass other options to the encoder. If the ffmpeg has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-\-ffmpegsuffix\fR ffmpeg\-suffix
+The suffix of the formats to be encoded. If ffmpeg has been
+stated more than once, use a comma separated list. Quote
+them with double quotes if needed; default: not set.
+.TP
+\fB\-q,\fR \fB\-\-quality\fR \fIquality\fP
+A comma separated list of values or the word "off", passed in the same
+order as the list of encoders! If no encoders passed, follow the order
+of the config file! Quality for oggenc: (1\-10), highest = 10;
+compression level for Flac: (0\-8), lowest compression = 0;
+quality for Lame in vbr mode: (0\-9),  best quality = 0;
+or quality for Faac: (10\-500), highest = 500; mp4als seems not to accept
+any compression level, set to zero; quality for Musepack:
+(0-10), best quality = 10; default: 5,3,5,100,0,5. Wavpack and ffmpeg
+have no quality switch, use encoder options instead.
+The value "off" turns option quality off.
+.br
+E. g. \fB\-\-coder\fR 2,0,1,3 \fB\-\-quality\fR 3,4,5,300 sets
+compression level for Flac to 3, Lame\-quality to 4, Oggenc\-quality to
+5 and Faac quality to 300.
+.TP
+\fB\-v,\fR \fB\-\-vbrmode\fR \fImode\fP
+Variable bitrate, only used with Lame, mode is
+.I new
+or
+.IR old ,
+see the Lame manpage. The Lame\-option quality will be
+changed to \fB\-V\fR instead of \fB\-q\fR if vbr\-mode is used;
+default: not set.
+.TP
+\fB\-b,\fR \fB\-\-bitrate\fR \fIrate\fP
+Encode "mp3" at this bitrate for Lame. If option \fB\-\-vbrmode\fR used,
+bitrate is equal to the \fB\-b\fR option, so one might want to set it
+"off"; or set if "off" if all options are passed to \-\-lameopt!
+Default: 128.
+.TP
+\fB\-B,\fR \fB\-\-maxrate\fR \fIrate\fP
+maxrate (Bitrate) for Lame using \fB\-\-vbrmode\fR is equal to the
+\fB\-B\fR option in Lame or the \fB\-M\fR option in Oggenc, default: 0.
+.TP
+\fB\-S,\fR \fB\-\-preset\fR \fImode\fP
+Use the preset switch when encoding with Lame. Combined with option
+\fB\-\-vbrmode new\fR the preset fast will be used.
+Use \fB\-\-vbrmode old\fR not to use fast VBR. Mode is one of:
+.IR insane \ ( 320
+kbps @ CBR),
+.IR extreme \ ( 256
+kbps),
+.IR standard \ ( 192
+kbps) or
+.IR medium \ ( 160
+kbps) or any other valid bitrate. Default: off.
+.TP
+\fB\-W,\fR \fB\-\-chars\fR [\fIlist\fP]
+Exclude special characters in file names and path. The argument is
+optional. The argument accepts a
+.I list
+of any characters. One might escape the characters or use double quotes
+to pass them on the command line. The argument also accepts the words
+\fINTFS\fP, \fIHFS\fP or \fIoff\fP. Following
+characters will be erased, if no argument stated or the word NTFS is
+passed: |\\:*?$  plus blanks and periods at beginning and end of file
+names and directories. When using the word HFS, only colons will be
+purged plus blanks and periods at beginning of file names and
+directories. Pass the word "off" as argument to set the option off
+again. Default: off.
+.TP
+\fB\-\-comment\fR \fIcomment\fP
+Specify a
+.I comment
+for the comment-tag for Lame, Faac and Musepack, or the description-tag
+for Oggenc and Flac. The special comment
+.I cddbid
+or
+.I discid
+will place the cddbid (used by freedb) or the discid (used for
+MusicBrainz) into the comment. Default: not set.
+.TP
+\fB\-g,\fR \fB\-\-genre\fR \fIgenre\fP
+Specify (and override CDDB)
+.IR genre ,
+must be a valid ID3\-genre if using Lame, can (but shouldn't) be
+anything if using other encoders, default: not set.
+.TP
+\fB\-y,\fR \fB\-\-year\fR \fIyear\fP
+Specify (and override CDDB) the
+.I year
+of year-tag for Lame, Faac and Musepack, or the date-tag for Oggenc
+and Flac. Default: not set.
+.TP
+\fB\-\-coverart\fR \fInumber\fP
+a comma seperated list of numbers (if several encoders are used)
+according to option \-\-coder with values 0 (no) or 1 (yes), default 0.
+.TP
+\fB\-\-coverpath\fR \fIpath\fP
+Path to the coverart picture to be included in the metadata of the sound
+files. The picture must be present or e.g. acquired using the \-\-precmd
+option. Default: not set.
+.TP
+\fB\-\-mp3tags\fR \fIFRAME\fP=\fItag\fP
+Additional
+.I tags
+to be added to the mp3 file(s) if encoder does not support the frame
+or if some unofficial
+.I FRAMEs
+shall be used (e.g. a compilation tag set to 1: TCMP=1). More than one
+\-\-mp3tags can be used if several tags shall be added. Default: not set.
+.TP
+\fB\-\-vatag\fR \fInumber\fP
+Analyze tracknames for "various artists" style and split the metadata in
+case one of the delimeters (colon, hyphen, slash or parenthesis) are
+found. Use unpair numbers for the scheme "artist ? tracktitle" and pair
+numbers in the opposite case. The artist will be compared to the
+argument of option \-\-vastring (see below).
+If the artist must be like \-\-vastring and each track have a
+delimeter, use 1 (2), if the artist must be like \-\-vastring while only
+some tracks contain the delimeter, use 3 (4), if no restrictions
+apply for the artist but all tracknames must have a delimeter, use
+5 (6) and finally, if only a few tracks contain a delimeter to be
+used as splitting point, set \-\-vatag to 7 (8). Default: not set.
+.TP
+\fB\-\-vastring\fR \fIstring\fP
+A string (regular expression) that defines the "various artists" style,
+e.g. Varios|VA. Default: \\bVA\\b|Variou*s|Various\\sArtists
+.TP
+\fB\-D,\fR \fB\-\-dirtemplate\fR '"foo \fIparameters\fR"'
+Use single and double quotes to pass the parameters of the templates!
+Allowed are any legal characters, slashes for multi-level directories
+and following parameters:
+.IR $album ,
+.IR $artist ,
+.IR $iletter ,
+.IR $genre ,
+.IR $quality ,
+.IR $suffix ,
+.IR $trackname ,
+.IR $tracknum,
+.IR $year
+and
+.IR $trackno ;
+example: '"$suffix $quality/my_snd_dir/$iletter/$artist/$year \(hy $album"'.
+The parameter $iletter is the initial letter of the artist name;
+$trackno is the total number of tracks of the release, this might be
+helpful to distinguish different releases with exactly the same name;
+$quality is needed, if one wants to encode the same format at different
+qualities in the same run. Note that $quality reflects the encoder
+options and not the arguments of option \fB\-\-quality\fR which might be set to
+"off". Or state different dirtemplates: the option is an array, so one
+can use several different dirtemplates in the same order as the encoders.
+If less dirtemplates than encoders are stated, the last dirtemplate will
+be used for subsequent encoders and the wav-directory, see EXAMPLES below.
+Default: '"$artist \- $album"'.
+.TP
+\fB\-T,\fR \fB\-\-tracktemplate\fR '"foo \fIparameters\fR"'
+See above. The tracktemplate is not an array, only one can be stated.
+Default: '"$tracknum $trackname"'.
+.TP
+\fB\-\-trackoffset\fR \fInumber\fP
+Give a trackoffset to be added to the $tracknum variable (see above).
+Default: 0.
+.TP
+\fB\-\-sshlist\fR \fIlist\fP
+Comma separated
+.I list
+of remote machines where RipIT should encode. The output path must be
+the same for all machines. Specify the login (login@machine) only if not
+the same for the remote machine. Else just state the machine names. See
+EXAMPLES for more information, default: not set.
+.TP
+\fB\-\-scp\fR
+If the file system can not be accessed on the remote machines, scp (copy)
+the WAV files to the remote machines, default: off.
+.TP
+\fB\-\-local\fR
+Only used with option \fB\-\-sshlist\fR; if all encoding shall be
+done on remote machines, use \fB\-\-nolocal\fR, default: on.
+.TP
+\fB\-\-mb\fR
+Access MusicBrainz DB via WebService::MusicBrainz module instead
+of the http protocol (see below). One needs the discid calculation
+perl module or command to be installed and in the path. Negate to switch
+option off again. A non interacitve freedb lookup will be done to
+retrieve a genre. Default: off.
+.TP
+\fB\-\-mbname\fR \fIlogin\fP
+Give the users MusicBrainz login name to submitt ISRCs to the database. Saved
+in plain when using a config, default not set.
+.TP
+\fB\-\-mbpass\fR \fIpassword\fP
+Give the users MusicBrainz password to submitt ISRCs to the database. Saved
+in plain when using a config, default not set.
+.TP
+\fB\-\-isrc\fR \fInumber\fP
+Enable ISRC detection with
+.IR number
+=
+.I 1
+(using icedax) and submission to
+MusicBrainz; default: 0
+.TP
+\fB\-C,\fR \fB\-\-cddbserver\fR server
+CDDB server, either freedb.org, freedb2.org or musicbrainz.org.
+Default freedb.org. Note, the full address is "mirror".freedb.org, i. e.
+default is freedb.freedb.org. Exception: freedb2.org and musicbrainz.org
+have no mirrors, their full addresses are: freedb2.org and
+freedb.musicbrainz.org on port 80 (see transfer mode).
+.TP
+\fB\-t,\fR \fB\-\-transfer\fR \fImode\fP
+Transfer
+.IR mode ,
+cddb or http, will set default port to 8880 or 80 (for
+http), default: cddb. Note: use http mode with CDDB servers freedb2.org
+or musicbrainz.org.
+.TP
+\fB\-m,\fR \fB\-\-mirror\fR \fImirror\fP
+Choose "freedb" or one of the possible freedb
+.IR mirrors ,
+default: freedb. For more information check the webpage www.freedb.org.
+There is no list of mirrors available these days. This option might be
+obsolete as freedb uses random servers, but the default setting is
+mandatory.
+.TP
+\fB\-L,\fR \fB\-\-protocol\fR \fIlevel\fP
+CDDB protocol level for CDDB query. Level =
+.I 6
+supports UTF\-8 and level =
+.I 5
+not. Use level =
+.I 5
+to suppress UTF\-8. Cf. option \fB\-\-utftag\fR below. Default: 6.
+.TP
+\fB\-P,\fR \fB\-\-proxy\fR address
+The http proxy to use when accessing the cddb server. The CDDB protocol
+must be http! Default: not set.
+.TP
+\fB\-n,\fR \fB\-\-nice\fR \fInumber\fP
+Set niceness of encoding process, default: 0.
+.TP
+\fB\-a,\fR \fB\-\-archive\fR
+Read and save CDDB files in $HOME/.cddb/"category" directory, where the
+"category" is one of the 11 CDDB categories. Default: off.
+.TP
+\fB\-e,\fR \fB\-\-eject\fR
+Ejects the CD when finished, if hardware supports it. Use \-\-noeject
+to switch it off. Default: off.
+.TP
+\fB\-\-ejectcmd\fR \fIcommand\fR
+.I Command
+to be used for ejection or loading of CD tray. Should be specified
+within FreeBSD even if option \-\-eject is not used to enable RipIT
+to load the CD tray. One does not need to mention the words close or
+eject or options like \-t, RipIT does it. Default: eject.
+.TP
+\fB\-\-ejectopt\fR \fIoptions\fR
+.I Options
+for ejection command to be used for ejection or loading of CD tray.
+Default: the path to the CD device.
+.TP
+\fB\-\-halt\fR
+Powers off the machine when finished if configuration supports it,
+default: off.
+.TP
+\fB\-s,\fR \fB\-\-submission\fR
+Specify \fB\-\-nosubmission\fR if the computer is offline and the
+created file cddb.toc shall be saved in the home directory instead of
+being submitted. With option  \fB\-\-archive\fR it will also be saved
+in the $HOME/.cddb directory. Note: it is really easy to resubmit
+incomplete CDDB entries! One can confirm each existing field with Enter
+and add a missing genre or year. The purpose of this option is also to
+permit the user to edit the CDDB data for the own filenames & tags and
+not to overwrite the original CDDB entry! Default: on.
+.TP
+\fB\-M,\fR \fB\-\-mail\fR \fIaddress\fP
+Users return email
+.IR address ,
+needed for submitting an entry to freedb.org. Default: not set.
+.TP
+\fB\-p,\fR \fB\-\-playlist\fR \fInumber\fR
+Create the m3u playlist file, or use \fB\-\-playlist\fR
+.IR 0 .
+For filenames without full path use \fB\-\-playlist\fR
+.IR 2 .
+Default is full path for filenames. Default 1 \- on.
+.TP
+\fB\-A,\fR \fB\-\-book\fR \fInumber\fP
+Create an audiobook file, i. e. merge all tracks into one sinlge file,
+option \-\-ghost will be switched off and file suffix will be m4b instead
+of m4a. Make sure to use encoder faac, ripit will not check for the
+encoder used. The installed version must support the \-w option to write
+tags. A chapter file will be written for chapter marks. Default: off.
+.TP
+\fB\-i,\fR \fB\-\-interaction\fR
+Specify \fB\-\-nointeraction\fR if ripit shall take the first CDDB
+entry found and rip without any questioning. Default: on.
+.TP
+\fB\-\-lcd\fR
+Use lcdproc to display status, default: not set.
+.TP
+\fB\-\-lcdhost\fR
+Specify the lcdproc host, default: localhost.
+.TP
+\fB\-\-lcdport\fR
+Specify the lcdport, default: 13666.
+.TP
+\fB\-\-infolog\fR \fIfile\fP
+Log operations (system calls, file/directory creation) to
+.I file
+given with full path; default: not set.
+.TP
+\fB\-l,\fR \fB\-\-lowercase\fR
+Lowercase filenames, default: off.
+.TP
+\fB\-u,\fR \fB\-\-underscore\fR
+Use underscores (_) instead of spaces in filenames, default: off.
+.TP
+\fB\-\-uppercasefirst\fR
+Uppercase first letter of each word in filenames and tags. Use this
+option if the CDDB entry is uppercase only. Default: off.
+.TP
+\fB\-U,\fR \fB\-\-utftag\fR
+Keep Lame\-tags in UTF-8 or decode them (but not the filenames) from
+UTF\-8 to ISO8859\-1. Applies only to mp3 (Lame). May be useful for
+tags with special characters and if mp3\-player doesn't support Unicode.
+Using Musepack one might want to pass the Musepack option \-\-unicode to
+option museopt.
+Default: off.
+.TP
+\fB\-\-rip\fR
+Rip the CD, to be used as \-\-norip if wav-files are present. Used for
+debugging. Default: not set.
+.TP
+\fB\-\-encode\fR
+Do encode the wavs. If only the wav\-files shall be created, prevent
+encoding with \fB\-\-noencode\fR (and use option \fB\-\-wav\fR, see
+below). Default: on.
+.TP
+\fB\-w,\fR \fB\-\-wav\fR
+Keep the wav files after encoding instead of deleting them,
+default: off.
+.TP
+\fB\-N,\fR \fB\-\-normalize\fR
+Normalizes the wave-files to a given dB-value (default: \-12dB). Default:
+off.
+.br
+This is useful when encoding
+.RS 7
+.IP "*" 3
+for hardware or software that doesn't support the
+replaygain\(hyfeature
+.IP "*" 3
+to audio formats without replaygain capabilities.
+.RE
+.TP
+\fB\-\-normcmd\fR
+Command to use for normalizing, default: normalize.
+.TP
+\fB\-z,\fR \fB\-\-normopt\fR
+Options to pass to normalize.
+Possible values:
+.TS
+tab (@);
+l l l.
+ @\-a \-nndB   :@Normalize to \-nn dB, default is \-12dB,
+ @Value range:@All values <= 0dB
+ @Example    :@normalize \-a \-20dB *.wav
+ @\-b         :@Batch mode \(hy loudness differences between
+ @            @individual tracks of a CD are maintained
+ @\-m         :@Mix mode \(hy all track are normalized to the
+ @            @same loudness
+ @\-v         :@Verbose operation
+ @\-q         :@Quiet operation
+.TE
+
+For further options see normalize documentation
+(http://normalize.nongnu.org).
+Please note that normalizing to a high dB value, e.g. \-6dB or less
+will lead to severe compression of the audio signal, thus losing sound
+quality. Keeping the default value of \-12dB is recommended.
+.br
+Default: \-b Option v (q) will be set according to verbosity chosen.
+.TP
+\fB\-\-cdtoc\fR \fInumber\fP
+Number n =
+.I 1
+to create a toc file to burn the wavs with CD-Text using cdrdao or
+cdrecord. Default: off.
+.TP
+\fB\-\-inf\fR \fInumber\fP
+Number n =
+.I 1
+to create inf files to burn the wavs with CD-Text using wodim or
+cdrecord. Default: off.
+.TP
+\fB\-\-cdcue\fR \fInumber\fP
+Number n =
+.I 1
+or
+.I 2
+to create cue sheets to burn the wavs with CD-Text.  The cue sheets will
+be copied to the other file formats. Number
+.I 1
+will swith option \-\-ghost on to eliminate chunks of silence. Number
+.I 2
+is experimental but does not switch option \-\-ghost on and may be used
+if number
+.I 1
+fails.  Default: off.
+.TP
+\fB\-h,\fR \fB\-\-help\fR
+Print this and exit.
+.TP
+\fB\-V,\fR \fB\-\-version\fR
+Print version and exit.
+.TP
+\fB\-x,\fR \fB\-\-verbose\fR \fInumber\fP
+Run silent (do not output comments, status etc.) (n =
+.IR 0 ),
+with minimal output (n =
+.IR 1 ),
+normal without encoder messages (n =
+.IR 2 ),
+normal (n =
+.IR 3 ),
+verbose (n =
+.IR 4 ),
+extremely verbose (n =
+.IR 5 ).
+Default 3.
+.TP
+\fB\-\-config\fR
+Read parameters from config file or specify \fB\-\-noconfig\fR to
+prevent reading it. A local config file in \&$HOME/.ripit/ will have
+higher priority, only if the local file does not exist, ripit will try
+to read /etc/ripit/config. Default: on.
+.TP
+\fB\-\-save\fR
+Add parameters passed on command line to an existing config file. This
+does not overwrite other existing settings. Options of an existing
+config file will be adopted and the old file saved as config.old.
+Default: off.
+.TP
+\fB\-\-savenew\fR
+Save all parameters passed on command line to a new config file, backup
+an existing file to config.old. Creates a default config file if no
+options are passed on command line. Default: off.
+.TP
+\fB\-\-loop\fR \fIvalue\fP
+Continue ripping and encoding as soon as the previous CD finished. This
+option forces ejection (\fB\-\-eject\fR). The value is either \fI0\fP
+for normal use or \fI1\fP for standard looping. Experimental value
+\fI2\fP migth be used to force immediate restart of ripping process.
+This will spoil the output, this will show the prompt although a child
+process is running (waiting for a new CD) and must be terminated
+manually. Default: off.
+.TP
+\fB\-\-quitnodb\fR \fIvalue\fP
+Give up CD if no CDDB entry found. Useful if option \-\-loop or \-\-nointeraction
+are on. Default behaviour is to let operator enter data or to use
+default artist, album and track names. Possible values: 0 - off, 1 - on,
+default: off
+.TP
+\fB\-\-resume\fR
+Resume a previously started session. Default: off.
+.TP
+\fB\-O,\fR \fB\-\-overwrite\fR \fIargument\fP
+Default behaviour of Ripit is not to overwrite existing directories, a
+suffix will be added if directory name exists. Use option overwrite to
+prevent this and either overwrite a previous rip (\fIy\fP) or force
+Ripit to quit (\fIq\fP) or even eject the disc (\fIe\fP). If ejection is
+chosen, the disc will be ejected even if option \-\-eject has not been
+switched on. Default: off (n)
+.TP
+\fB\-\-dpermission\fR \fInumber\fP
+Change the directory permission to \fInumber\fP. Default: 0755.
+.TP
+\fB\-\-fpermission\fR \fInumber\fP
+Change the file permission to \fInumber\fP. Default: 0644.
+.TP
+\fB\-\-md5sum\fR
+Create a MD5-sum file for each type of sound files.
+.TP
+\fB\-\-threads\fR \fInumber\fP
+Comma separated list of numbers giving maximum of allowed
+encoders to run at the same time. In conjunction with option sshlist
+the number for the local machine is mandatory and must be stated first.
+Default: 1.
+.TP
+\fB\-X,\fR \fB\-\-execmd\fR \fIcommand\fP
+State a \fIcommand\fP to be executed when ripit finshed. The same
+variables as in the dirtemplate can be stated. When using MusicBrainz
+one can try to use $cd{asin} to get the ASIN. Make sure to escape the
+command if needed. Default: not set.
+.TP
+\fB\-\-precmd\fR \fIcommand\fP
+State a \fIcommand\fP to be executed before ripping started. The same
+variables as in the dirtemplate can be stated. When using MusicBrainz
+one can try to use $cd{asin} to get the ASIN. Make sure to escape the
+command if needed. Can be used to execute a script to retrieve coverart.
+Default: not set.
+.PP
+.SH "EXAMPLES"
+To specify a CD device, type
+.IP
+ripit \fB\-\-device\fR /dev/sr1
+.PP
+To specify the output directory, type
+.IP
+ripit \fB\-\-outputdir\fR /foo/paths/
+.PP
+To rip and encode a special track selection, type
+.IP
+ripit 1,3\-6,8\-11
+.PP
+To use several encoders in the same run, type
+.IP
+ripit \fB\-\-coder\fR 1,0,2 \fB\-\-quality\fR 3,5,6
+.PP
+To use Lame with variable bitrate (VBR), type
+.IP
+ripit \fB\-\-vbrmode\fR new \fB\-\-bitrate\fR 0
+.PP
+Note, one should reset the \fB\-\-bitrate\fR to 0 (zero) if the \fB\
+\-b\fR option of Lame is not desired. According to VBR mode in Lame, use
+"new" or "old".
+.PP
+It is recommended to use the preset switches for Lame,
+(see Lame man\-page) and specify fast encoding with \fB\-\-vbrmode\fR
+new (use \fB\-\-vbrmode\fR old to switch off the fast encoding)
+.IP
+ripit \fB\-\-preset\fR extreme \fB\-\-vbrmode\fR new
+.PP
+To pass options related to the encoder use the according encoder option
+switch: e.g. to use the managed mode with oggenc:
+.IP
+ripit \fB\-c\fR 1 \fB\-\-oggencopt\fR "\-\-managed \-b 192 \-M 224 \-m 96"
+\fB\-\-quality\fR "off"
+.PP
+Normalize your wave-files prior to encoding:
+.IP
+ripit \-\-normalize
+.PP
+Normalize your files to \-18dB using "mix mode" (see normalize
+documentation)
+.IP
+ripit \-\-normalize \-\-normopt "\-m \-a \-18dB"
+.PP
+To define a directory template where the sound files should  go, type
+.IP
+ripit \fB\-\-dirtemplate\fR '"$artist \- $year"'
+.PP
+To create 2 directory levels, as used in other environments, type
+.IP
+ripit \fB\-\-dirtemplate\fR '"$artist/$album"'
+.PP
+To save a config file in ~/home/.ripit/ with options: to use Lame
+and Oggenc, don't create a m3u file, archive the CDDB entry files in
+~/.cddb/"category"/ and to eject CD when done, type
+.IP
+ripit \fB\-\-coder\fR 0,1 \fB\-\-playlist\fR 0 \fB\-\-archive\fR
+\fB\-\-eject\fR \fB\-\-save\fR
+.PP
+To do the job without any interaction, type
+.IP
+ripit \fB\-\-nointeraction\fR
+.PP
+To use a network for encoding, make sure that the output paths are equal
+on all machines!
+.IP
+ripit \fB\-\-sshlist\fR sun,saturn,earth
+.PP
+where sun, saturn and earth are remote machines on which a user
+can login via ssh without entering a password or passphrase! Note
+that the paths must be equal for the user on all remote machines!
+If the login is different on some machines, try
+.IP
+ripit \fB\-\-sshlist\fR login1@sun,login2@saturn,login3@earth
+.PP
+If there is "no" identical path on the remote machines,
+then the user might enter e.g. /tmp/ as output directory.
+If the file\-system is not mounted on each remote machine, one can
+try to copy the wavs to the remote machines using option \fB\-\-scp\fR.
+.IP
+ripit \fB\-\-sshlist\fR sun,saturn,earth \fB\-\-scp\fR
+.PP
+Check for ghost songs and trim very long lead-in/out:
+.IP
+ripit \fB\-\-ghost\fR \fB\-\-prepend\fR 1.0 \fB\-\-extend\fR 1.0
+.PP
+Rip only first 30 seconds of each track (useful for testing)
+.IP
+ripit \fB\-\-span\fR 0-30
+.PP
+Encode the same format in 2 qualities, at low quality for a portable, at
+high quality for home:
+.IP
+ripit \fB\-\-dirtemplate\fR '"cbr/$artist/$year \(hy $album"' \\
+      \fB\-\-dirtemplate\fR '"preset/$artist \(hy $album"' \\
+      \fB\-\-coder\fR 0,0 \fB\-\-bitrate\fR off \fB\-\-quality\fR off,off \\
+      \fB\-\-lameopt\fR "\-b 128 \-q 2;\-\-preset extreme"
+.PP
+Force RipIT to use one and the same directory for all sound files:
+.IP
+ripit \fB\-\-dirtemplate\fR '"/"' \fB\-\-outputdir="/media/sound"\fR \\
+      \fB\-\-resume\fR
+.PP
+.SH "FILES"
+User config file (/etc/ripit/config will only be used if there is no
+\&$HOME/.ripit/config):
+.IP
+\&$HOME/.ripit/config
+.br
+\&/etc/ripit/config
+.IP
+/usr/share/doc/packages/ripit/README
+.br
+/usr/share/doc/packages/ripit/HISTORY
+.br
+/usr/share/doc/packages/ripit/LICENSE
+.PP
+.SH "BUGS"
+Probably there are more than some.
+.PP
+.SH "SEE ALSO"
+cdparanoia(1), lame(1), oggenc(1), flac(1), normalize(1), cdda2wav(1),
+ffmpeg(1)
+.PP
+.SH "AUTHORS"
+RipIT is now maintained by Felix Suwald, please send bugs, wishes
+comments to ripit_[at]_suwald_[dot]_com with a concise subject.
+.br
+For bugs, wishes and comments about lcdproc, please contact
+.br
+max.kaesbauer_[at]_gmail_[dot]_com.
+.br
+Former maintainer:  Mads Martin Joergensen;  RipIT was originally
+developed by Simon Quinn.
+.PP
+This manpage was originally created for the Debian GNU/Linux system by
+help2man 1.36 and optimized by Elimar Riesebieter <riesebie@lxtec.de>,
+enhanced and updated by Felix Suwald.
